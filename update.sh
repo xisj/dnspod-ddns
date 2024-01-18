@@ -1,177 +1,5 @@
 #!/bin/bash
 
-
-get_domain_list() {
-    # 在函数内部获取参数值
-    secret_id="$1"
-    secret_key="$2"
-    service="dnspod"
-    host="dnspod.tencentcloudapi.com"
-    region=""
-    action="DescribeDomainList"
-    version="2021-03-23"
-    algorithm="TC3-HMAC-SHA256"
-    timestamp=$(date +%s)
-    date=$(date -u -d "@$timestamp" +"%Y-%m-%d")
-    payload="{}"
-
-    # ************* 步骤 1：拼接规范请求串 *************
-    http_request_method="POST"
-    canonical_uri="/"
-    canonical_querystring=""
-    canonical_headers="content-type:application/json; charset=utf-8\nhost:$host\nx-tc-action:$(echo $action | awk '{print tolower($0)}')\n"
-    signed_headers="content-type;host;x-tc-action"
-    hashed_request_payload=$(echo -n "$payload" | openssl sha256 -hex | awk '{print $2}')
-    canonical_request="$http_request_method\n$canonical_uri\n$canonical_querystring\n$canonical_headers\n$signed_headers\n$hashed_request_payload"
-
-    # ************* 步骤 2：拼接待签名字符串 *************
-    credential_scope="$date/$service/tc3_request"
-    hashed_canonical_request=$(printf "$canonical_request" | openssl sha256 -hex | awk '{print $2}')
-    string_to_sign="$algorithm\n$timestamp\n$credential_scope\n$hashed_canonical_request"
-
-    # ************* 步骤 3：计算签名 *************
-    secret_date=$(printf "$date" | openssl dgst -sha256 -hmac "TC3$secret_key" | awk '{print $2}')
-
-    # 使用新的openssl语法
-    secret_service=$(printf "$service" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$secret_date" | awk '{print $2}')
-    secret_signing=$(printf "tc3_request" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$secret_service" | awk '{print $2}')
-    signature=$(printf "$string_to_sign" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$secret_signing" | awk '{print $2}')
-
-    # ************* 步骤 4：拼接 Authorization *************
-    authorization="$algorithm Credential=$secret_id/$credential_scope, SignedHeaders=$signed_headers, Signature=$signature"
-
-    # ************* 步骤 5：构造并发起请求 *************
-    response=$(curl -s -XPOST "https://$host" -d "$payload" \
-      -H "Authorization: $authorization" \
-      -H "Content-Type: application/json; charset=utf-8" \
-      -H "Host: $host" \
-      -H "X-TC-Action: $action" \
-      -H "X-TC-Timestamp: $timestamp" \
-      -H "X-TC-Version: $version" \
-      -H "X-TC-Region: $region" \
-      -H "X-TC-Token: $token")
-    echo $response
-}
-
-get_domain_record_list() {
-      # 在函数内部获取参数值
-      secret_id="$1"
-      secret_key="$2"
-      input_domain="$3"
-      service="dnspod"
-      host="dnspod.tencentcloudapi.com"
-      region="ap-guangzhou"  # 请根据实际情况设置区域
-      action="DescribeRecordList"
-      version="2021-03-23"
-      algorithm="TC3-HMAC-SHA256"
-      timestamp=$(date +%s)
-      date=$(date -u -d "@$timestamp" +"%Y-%m-%d")
-
-      # 用户输入域名
-#      read -p "请输入您要查询的域名: " input_domain
-      payload="{\"Domain\":\"$input_domain\"}"
-
-      # ************* 步骤 1：拼接规范请求串 *************
-      http_request_method="POST"
-      canonical_uri="/"
-      canonical_querystring=""
-      canonical_headers="content-type:application/json; charset=utf-8\nhost:$host\nx-tc-action:$(echo $action | awk '{print tolower($0)}')\n"
-      signed_headers="content-type;host;x-tc-action"
-      hashed_request_payload=$(echo -n "$payload" | openssl sha256 -hex | awk '{print $2}')
-      canonical_request="$http_request_method\n$canonical_uri\n$canonical_querystring\n$canonical_headers\n$signed_headers\n$hashed_request_payload"
-
-      # ************* 步骤 2：拼接待签名字符串 *************
-      credential_scope="$date/$service/tc3_request"
-      hashed_canonical_request=$(printf "$canonical_request" | openssl sha256 -hex | awk '{print $2}')
-      string_to_sign="$algorithm\n$timestamp\n$credential_scope\n$hashed_canonical_request"
-
-      # ************* 步骤 3：计算签名 *************
-      #secret_date=$(printf "$date" | openssl sha256 -hmac "TC3$secret_key" | awk '{print $2}')
-      #secret_service=$(printf $service | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_date" | awk '{print $2}')
-      secret_date=$(printf "$date" | openssl dgst -sha256 -hmac "TC3$secret_key" | awk '{print $2}')
-
-      # 使用新的openssl语法
-      secret_service=$(printf "$service" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$secret_date" | awk '{print $2}')
-
-
-
-      secret_signing=$(printf "tc3_request" | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_service" | awk '{print $2}')
-      signature=$(printf "$string_to_sign" | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_signing" | awk '{print $2}')
-
-      # ************* 步骤 4：拼接 Authorization *************
-      authorization="$algorithm Credential=$secret_id/$credential_scope, SignedHeaders=$signed_headers, Signature=$signature"
-
-      # ************* 步骤 5：构造并发起请求 *************
-      #curl -XPOST "https://$host" -d "$payload" -H "Authorization: $authorization" -H "Content-Type: application/json; charset=utf-8" -H "Host: $host" -H "X-TC-Action: $action" -H "X-TC-Timestamp: $timestamp" -H "X-TC-Version: $version" -H "X-TC-Region: $region" -H "X-TC-Token: $token"
-
-
-      response=$(curl -s -XPOST "https://$host" -d "$payload" -H "Authorization: $authorization" -H "Content-Type: application/json; charset=utf-8" -H "Host: $host" -H "X-TC-Action: $action" -H "X-TC-Timestamp: $timestamp" -H "X-TC-Version: $version" -H "X-TC-Region: $region" -H "X-TC-Token: $token")
-      echo "$response"
-
-}
-
-update_domain_ip() {
-  # 1. 用户输入秘钥和payload信息
-#domain_list_json=$(update_domain_ip "$secret_id" "$secret_key" "$selected_domain" "$subdomain" "$record_type" "$record_line" "$curl_ip" "$record_id")
-  secret_id="$1"
-  secret_key="$2"
-  selected_domain="$3"
-  subdomain="$4"
-  record_type="$5"
-  record_line="$6"
-  curl_ip="$7"
-  record_id="$8"
-  # 构建payload
-  payload="{\"Domain\":\"$selected_domain\",\"SubDomain\":\"$subdomain\",\"RecordType\":\"$record_type\",\"RecordLine\":\"$record_line\",\"Value\":\"$curl_ip\",\"RecordId\":$record_id}"
-
- echo $payload
-#  payload="{\"Domain\":\"$domain\",\"SubDomain\":\"$subdomain\",\"RecordType\":\"$record_type\",\"RecordLine\":\"默认\",\"Value\":\"$value\",\"RecordId\":54370757}"
-
-  # 2. 根据用户输入构建请求
-  service="dnspod"
-  host="dnspod.tencentcloudapi.com"
-  region=""
-  action="ModifyRecord"
-  version="2021-03-23"
-  algorithm="TC3-HMAC-SHA256"
-  timestamp=$(date +%s)
-  date=$(date -u -d @$timestamp +"%Y-%m-%d")
-
-  # 3. 拼接规范请求串
-  http_request_method="POST"
-  canonical_uri="/"
-  canonical_querystring=""
-  canonical_headers="content-type:application/json; charset=utf-8\nhost:$host\nx-tc-action:$(echo $action | awk '{print tolower($0)}')\n"
-  signed_headers="content-type;host;x-tc-action"
-  hashed_request_payload=$(echo -n "$payload" | openssl sha256 -hex | awk '{print $2}')
-  canonical_request="$http_request_method\n$canonical_uri\n$canonical_querystring\n$canonical_headers\n$signed_headers\n$hashed_request_payload"
-
-  # 4. 拼接待签名字符串
-  credential_scope="$date/$service/tc3_request"
-  hashed_canonical_request=$(printf "$canonical_request" | openssl sha256 -hex | awk '{print $2}')
-  string_to_sign="$algorithm\n$timestamp\n$credential_scope\n$hashed_canonical_request"
-
-  # 5. 计算签名
-  secret_date=$(printf "$date" | openssl dgst -sha256 -hmac "TC3$secret_key" | awk '{print $2}')
-
-  secret_service=$(printf "$service" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$secret_date" | awk '{print $2}')
-
-  secret_signing=$(printf "tc3_request" | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_service" | awk '{print $2}')
-  signature=$(printf "$string_to_sign" | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_signing" | awk '{print $2}')
-
-  # 6. 拼接 Authorization
-  authorization="$algorithm Credential=$secret_id/$credential_scope, SignedHeaders=$signed_headers, Signature=$signature"
-
-  # 7. 构造并发起请求
-  result=$(curl -s -XPOST "https://$host" -d "$payload" -H "Authorization: $authorization" -H "Content-Type: application/json; charset=utf-8" -H "Host: $host" -H "X-TC-Action: $action" -H "X-TC-Timestamp: $timestamp" -H "X-TC-Version: $version" -H "X-TC-Region: $region" -H "X-TC-Token: $token")
-
-  # 8. 打印请求结果
-#  echo "Request Result:"
-  echo "$result"
-}
-
-
-
 send_request() {
       # 在函数内部获取参数值
       secret_id="$1"
@@ -232,12 +60,47 @@ send_request() {
 }
 
 
-get_domain_list2() {
+get_domain_list() {
     secret_id="$1"
     secret_key="$2"
     action="DescribeDomainList"
     payload="{}"
     echo $(send_request "$secret_id" "$secret_key" $action $payload)
+}
+
+get_domain_record_list() {
+      secret_id="$1"
+      secret_key="$2"
+      input_domain="$3"
+      action="DescribeRecordList"
+      payload="{\"Domain\":\"$input_domain\"}"
+      echo $(send_request "$secret_id" "$secret_key" $action $payload)
+}
+
+
+update_domain_ip() {
+  # 1. 用户输入秘钥和payload信息
+#domain_list_json=$(update_domain_ip "$secret_id" "$secret_key" "$selected_domain" "$subdomain" "$record_type" "$record_line" "$curl_ip" "$record_id")
+  secret_id="$1"
+  secret_key="$2"
+  selected_domain="$3"
+  subdomain="$4"
+  record_type="$5"
+  record_line="$6"
+  curl_ip="$7"
+  record_id="$8"
+  # 构建payload
+
+  action="ModifyRecord"
+
+  payload="{\"Domain\":\"$selected_domain\",\"SubDomain\":\"$subdomain\",\"RecordType\":\"$record_type\",\"RecordLine\":\"$record_line\",\"Value\":\"$curl_ip\",\"RecordId\":$record_id}"
+
+# echo $payload
+#  payload="{\"Domain\":\"$domain\",\"SubDomain\":\"$subdomain\",\"RecordType\":\"$record_type\",\"RecordLine\":\"默认\",\"Value\":\"$value\",\"RecordId\":54370757}"
+
+  echo $(send_request "$secret_id" "$secret_key" $action $payload)
+
+
 }
 
 
@@ -249,8 +112,7 @@ read -p "请输入您的secret_key: " secret_key
 
 token=""
 
-#domain_list_json=$(get_domain_list "$secret_id" "$secret_key")
-domain_list_json=$(get_domain_list2 "$secret_id" "$secret_key" )
+domain_list_json=$(get_domain_list "$secret_id" "$secret_key" )
 
 echo "$domain_list_json"
 
