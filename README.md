@@ -1,6 +1,6 @@
 # dnspod-ddns
 a simple dnspod-ddns shell
-一个调用dnspod api 对ip 自动更新的简易脚本。 
+一个调用dnspod api 对ip 自动更新的简易脚本。 这个脚本使用最新的腾讯云api
 
 ## 使用方法
 ### 手工更新域名ip
