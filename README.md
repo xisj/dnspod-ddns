@@ -18,3 +18,15 @@ dnspod 操作域名所需的  secret_id和secret_key需要去以下网址申请�
 ### 定时自动更新域名ip
 
 启动一个定时任务，按需更新即可
+
+### 群晖新建定时任务
+假设已经将ddns.sh 拷贝到 /root 目录下
+
+![图片](https://github.com/terry2010/dnspod-ddns/assets/1849037/291c6079-e70c-44e6-bfa4-e1acd3ca5c0c)
+
+![图片](https://github.com/terry2010/dnspod-ddns/assets/1849037/b6decc09-5b24-4806-a769-975d7d408d49)
+
+![图片](https://github.com/terry2010/dnspod-ddns/assets/1849037/ff295180-0fa0-479e-9003-3839709fc560)
+
+
+
