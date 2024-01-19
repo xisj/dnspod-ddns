@@ -142,7 +142,7 @@ done
 # 检查必要参数是否都已提供
 if [ -z "$secret_id" ] || [ -z "$secret_key" ] || [ -z "$domain" ]; then
         echo "缺少参数， 正确的启动参数为:"
-        echo "./update.sh secret_id=1231231232123 secret_key=aaaaaaa domain=123.baidu.com"
+        echo "./ddns.sh secret_id=1231231232123 secret_key=aaaaaaa domain=123.baidu.com"
         echo "secret_id和secret_key需要去以下网址申请："
         echo "https://console.cloud.tencent.com/cam/capi"
         echo ""
@@ -157,7 +157,7 @@ if [ -z "$secret_id" ] || [ -z "$secret_key" ] || [ -z "$domain" ]; then
 
         domain_list_json=$(get_domain_list "$secret_id" "$secret_key" )
 
-        echo "$domain_list_json"
+#        echo "$domain_list_json"
 
         # 解析JSON并提取域名信息
         domain_list=$(echo "$domain_list_json" | jq -r '.Response.DomainList[] | "\(.Name)"')
