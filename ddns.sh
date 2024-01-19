@@ -5,7 +5,6 @@ send_request() {
       secret_id="$1"
       secret_key="$2"
       action="$3"
-#      action="DescribeRecordList"
       payload="$4"
       service="dnspod"
       host="dnspod.tencentcloudapi.com"
@@ -16,9 +15,7 @@ send_request() {
       timestamp=$(date +%s)
       date=$(date -u -d "@$timestamp" +"%Y-%m-%d")
 
-      # 用户输入域名
-#      read -p "请输入您要查询的域名: " input_domain
-#      payload="{\"Domain\":\"$input_domain\"}"
+
 
       # ************* 步骤 1：拼接规范请求串 *************
       http_request_method="POST"
@@ -35,15 +32,8 @@ send_request() {
       string_to_sign="$algorithm\n$timestamp\n$credential_scope\n$hashed_canonical_request"
 
       # ************* 步骤 3：计算签名 *************
-      #secret_date=$(printf "$date" | openssl sha256 -hmac "TC3$secret_key" | awk '{print $2}')
-      #secret_service=$(printf $service | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_date" | awk '{print $2}')
       secret_date=$(printf "$date" | openssl dgst -sha256 -hmac "TC3$secret_key" | awk '{print $2}')
-
-      # 使用新的openssl语法
       secret_service=$(printf "$service" | openssl dgst -sha256 -mac HMAC -macopt hexkey:"$secret_date" | awk '{print $2}')
-
-
-
       secret_signing=$(printf "tc3_request" | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_service" | awk '{print $2}')
       signature=$(printf "$string_to_sign" | openssl dgst -sha256 -mac hmac -macopt hexkey:"$secret_signing" | awk '{print $2}')
 
@@ -56,9 +46,7 @@ send_request() {
 
       response=$(curl -s -XPOST "https://$host" -d "$payload" -H "Authorization: $authorization" -H "Content-Type: application/json; charset=utf-8" -H "Host: $host" -H "X-TC-Action: $action" -H "X-TC-Timestamp: $timestamp" -H "X-TC-Version: $version" -H "X-TC-Region: $region" -H "X-TC-Token: $token")
       echo "$response"
-
 }
-
 
 get_domain_list() {
     secret_id="$1"
@@ -77,7 +65,6 @@ get_domain_record_list() {
       echo $(send_request "$secret_id" "$secret_key" $action $payload)
 }
 
-
 update_domain_ip() {
   # 1. 用户输入秘钥和payload信息
 #domain_list_json=$(update_domain_ip "$secret_id" "$secret_key" "$selected_domain" "$subdomain" "$record_type" "$record_line" "$curl_ip" "$record_id")
@@ -89,14 +76,9 @@ update_domain_ip() {
   record_line="$6"
   curl_ip="$7"
   record_id="$8"
-  # 构建payload
 
   action="ModifyRecord"
-
   payload="{\"Domain\":\"$selected_domain\",\"SubDomain\":\"$subdomain\",\"RecordType\":\"$record_type\",\"RecordLine\":\"$record_line\",\"Value\":\"$curl_ip\",\"RecordId\":$record_id}"
-
-# echo $payload
-#  payload="{\"Domain\":\"$domain\",\"SubDomain\":\"$subdomain\",\"RecordType\":\"$record_type\",\"RecordLine\":\"默认\",\"Value\":\"$value\",\"RecordId\":54370757}"
 
   echo $(send_request "$secret_id" "$secret_key" $action $payload)
 
@@ -300,4 +282,3 @@ else
         fi
 
 fi
-
