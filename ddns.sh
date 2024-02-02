@@ -193,7 +193,7 @@ if [ -z "$secret_id" ] || [ -z "$secret_key" ] || [ -z "$domain" ]; then
 
 
         # 获取指定域名的IP地址
-        curl_ip=$(curl -s ip.zhuikan.com)
+        curl_ip=$(curl -s "http://ip.zhuikan.com/?p=bash-dnspod-ddns&v=1.0")
                 if is_valid_ip "$curl_ip"; then
                     echo "curl 获取的 IP 地址为: $curl_ip，是一个有效的 IP 地址。"
                 else
